@@ -53,19 +53,23 @@ const QuizTakePage = () => {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!quiz) return;
-
     setSubmitting(true);
 
     try {
-      const response = await quizService.submitQuiz(quizId, {
-        answers: selectedAnswers,
+      const formattedAnswers = Object.keys(selectedAnswers).map((questionId) => {
+        const question = quiz.questions.find(q => q._id === questionId);
+        const questionIndex = quiz.questions.findIndex(q => q._id === questionId);
+        const optionIndex = selectedAnswers[questionId];
+        const selectedAnswer = question.options[optionIndex];
+
+        return { questionIndex, selectedAnswer };
       });
 
+      await quizService.submitQuiz(quizId, formattedAnswers);
+
       toast.success('Quiz submitted successfully!');
-      navigate(`/quizzes/${quizId}/results`, {
-        state: { result: response.data },
-      });
+      navigate(`/quizzes/${quizId}/results`);
+
     } catch (error) {
       toast.error(error.message || 'Failed to submit quiz.');
     } finally {
@@ -92,13 +96,13 @@ const QuizTakePage = () => {
   }
 
   const currentQuestion = quiz.questions[currentQuestionIndex];
+  const isAnswered = selectedAnswers.hasOwnProperty(currentQuestion._id);
   const answeredCount = Object.keys(selectedAnswers).length;
 
   return (
     <div className="max-w-4xl mx-auto">
       <PageHeader title={quiz.title || 'Take Quiz'} />
 
-      {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold text-slate-700">
@@ -119,7 +123,6 @@ const QuizTakePage = () => {
         </div>
       </div>
 
-      {/* Question Card */}
       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 p-6 mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl mb-6">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -132,87 +135,107 @@ const QuizTakePage = () => {
           {currentQuestion.question}
         </h3>
 
-        {/* Options */}
         <div className="space-y-3">
-          {currentQuestion.options.map((option, index) => {
-            const isSelected = selectedAnswers[currentQuestion._id] === index;
+  {currentQuestion.options.map((option, index) => {
+    const isSelected = selectedAnswers[currentQuestion._id] === index;
 
-            return (
-              <label
-                key={index}
-                className={`group relative flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                  isSelected
-                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10'
-                    : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-white hover:shadow-md'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`question-${currentQuestion._id}`}
-                  value={index}
-                  checked={isSelected}
-                  onChange={() => handleOptionChange(currentQuestion._id, index)}
-                  className="sr-only"
-                />
+    return (
+      <label
+        key={index}
+        className={`group relative flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+          isSelected
+            ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10'
+            : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-white hover:shadow-md'
+        }`}
+      >
+        <input
+          type="radio"
+          name={`question-${currentQuestion._id}`}
+          value={index}
+          checked={isSelected}
+          onChange={() => handleOptionChange(currentQuestion._id, index)}
+          className="sr-only"
+        />
 
-                <div
-                  className={`shrink-0 w-5 h-5 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
-                    isSelected
-                      ? 'border-emerald-500 bg-emerald-500'
-                      : 'border-slate-300 bg-white group-hover:border-emerald-400'
-                  }`}
-                >
-                  {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-                </div>
-
-                <span
-                  className={`ml-4 text-sm font-medium transition-colors duration-200 ${
-                    isSelected ? 'text-emerald-900' : 'text-slate-700 group-hover:text-slate-900'
-                  }`}
-                >
-                  {option}
-                </span>
-
-                {isSelected && (
-                  <CheckCircle2
-                    className="ml-auto w-5 h-5 text-emerald-600"
-                    strokeWidth={2.5}
-                  />
-                )}
-              </label>
-            );
-          })}
+        <div
+          className={`shrink-0 w-5 h-5 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+            isSelected
+              ? 'border-emerald-500 bg-emerald-500'
+              : 'border-slate-300 bg-white group-hover:border-emerald-400'
+          }`}
+        >
+          {isSelected && (
+            <div className="w-2 h-2 bg-white rounded-full" />
+          )}
         </div>
+
+        <span
+          className={`ml-4 text-sm font-medium transition-colors duration-200 ${
+            isSelected
+              ? 'text-emerald-900'
+              : 'text-slate-700 group-hover:text-slate-900'
+          }`}
+        >
+          {option}
+        </span>
+
+        {isSelected && (
+          <CheckCircle2
+            className="ml-auto w-5 h-5 text-emerald-600"
+            strokeWidth={2.5}
+          />
+        )}
+      </label>
+    );
+  })}
+</div>
       </div>
 
-      {/* Navigation Controls */}
       <div className="flex items-center justify-between">
         <Button
           variant="secondary"
           onClick={handlePreviousQuestion}
           disabled={currentQuestionIndex === 0 || submitting}
         >
-          <ChevronLeft className="w-4 h-4 mr-2" />
+          <ChevronLeft className="w-4 h-4" />
           Previous
         </Button>
 
         {currentQuestionIndex === quiz.questions.length - 1 ? (
-          <Button
-            onClick={handleSubmitQuiz}
-            disabled={submitting || answeredCount < quiz.questions.length}
-          >
+          <Button onClick={handleSubmitQuiz} disabled={submitting}>
             {submitting ? 'Submitting...' : 'Submit Quiz'}
           </Button>
         ) : (
-          <Button
-            onClick={handleNextQuestion}
-            disabled={submitting}
-          >
+          <Button onClick={handleNextQuestion} disabled={submitting}>
             Next
-            <ChevronRight className="w-4 h-4 ml-2" />
+            <ChevronRight className="w-4 h-4" />
           </Button>
         )}
       </div>
+
+    <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+  {quiz.questions.map((q, index) => {
+    const isAnsweredQuestion = selectedAnswers[q._id] !== undefined;
+    const isCurrent = index === currentQuestionIndex;
+
+    return (
+      <button
+        key={index}
+        onClick={() => setCurrentQuestionIndex(index)}
+        disabled={submitting}
+        className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all duration-200 ${
+          isCurrent
+            ? "bg-emerald-500 text-white scale-110 shadow-md"
+            : isAnsweredQuestion
+            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {index + 1}
+      </button>
+    );
+  })}
+</div>
     </div>
   );
 };
