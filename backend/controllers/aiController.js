@@ -98,10 +98,10 @@ export const generateQuiz = async (req, res, next) => {
       status: 'ready'
     });
 
-    if (!document) {
+    if (!document || !document.extractedText) {
       return res.status(404).json({
         success: false,
-        error: 'Document not found or not ready'
+        error: 'Document not found, not ready, or contains no text'
       });
     }
 
@@ -111,7 +111,17 @@ export const generateQuiz = async (req, res, next) => {
       parseInt(numQuestions)
     );
 
-    // Save quiz
+    // --- CRITICAL FIX START ---
+    // Check if questions actually exist and have items
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(422).json({
+        success: false,
+        error: 'AI failed to generate questions. The document might be too short or complex.'
+      });
+    }
+    // --- CRITICAL FIX END ---
+
+    // Save quiz only if we have questions
     const quiz = await Quiz.create({
       userId: req.user._id,
       documentId: document._id,
@@ -128,11 +138,10 @@ export const generateQuiz = async (req, res, next) => {
       message: 'Quiz generated successfully'
     });
   } catch (error) {
+    console.error("Quiz Generation Error:", error); // Log the actual error for debugging
     next(error);
   }
 };
-
-
 /**
  * @desc    Generate document summary
  * @route   POST /api/ai/generate-summary
