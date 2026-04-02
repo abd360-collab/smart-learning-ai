@@ -26,13 +26,13 @@
 
 Smart Learning AI uses **Retrieval-Augmented Generation (RAG)** with LangChain:  
 User Query
-↓
+->
 Text Splitting & Embedding Generation
-↓
+->
 Vector Similarity Search (MongoDB + Embeddings)
-↓
+->
 Context Retrieval from PDFs
-↓
+->
 LLM Response Generation
 
 
@@ -44,11 +44,11 @@ LLM Response Generation
 
 ## 🏗 System Architecture
 User
-↓
+->
 Frontend (React + Vite + TailwindCSS) [Vercel]
-↓
+->
 Backend API (Node.js + Express) [Render]
-↓
+->
 MongoDB Atlas (Document Storage + Vector Embeddings)
 
 
