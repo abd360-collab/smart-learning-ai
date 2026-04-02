@@ -1,102 +1,104 @@
-🤖 Smart Learning AI Assistant
-A powerful Full-Stack MERN application that transforms static PDFs into interactive, AI-driven study experiences. Leveraging Google Gemini AI and LangChain, the platform allows users to chat with their documents, generate quizzes, and track their learning progress in real-time.
+Smart Learning AI
 
-🚀 Live Demo: Frontend on Vercel
+Smart Learning AI is a Full-Stack AI Learning Assistant that transforms PDFs into interactive study experiences. Users can chat with their uploaded documents, generate flashcards, quizzes, summaries, and track learning progress — all powered by Google Gemini AI.
 
-🌐 Backend API: Deployed on Render
+Live Application
 
-✨ Features
-📄 PDF-to-Knowledge Transformation: Upload PDFs and process them using LangChain for deep document understanding.
-
-💬 Context-Aware AI Chat: Chat with your documents using RAG (Retrieval-Augmented Generation) to get precise answers with references.
-
-🧠 Automated Study Tools: * Quizzes: Auto-generate questions based on your specific PDF content.
-
-Flashcards: Summarize key concepts into digestible cards.
-
-Summaries: Get instant high-level overviews of long documents.
-
-📈 Progress Tracking: Monitor your learning journey and quiz scores.
-
-🎨 Modern UI: A responsive, sleek interface built with React and Tailwind CSS.
-
-🛠️ Tech Stack
 Frontend
-React.js (Vite)
+https://smart-learning-ai-sigma.vercel.app
 
-Tailwind CSS (Styling)
+Backend API
+https://smart-learning-ai-dw4t.onrender.com
 
-Axios (API Communication)
+Features
+Chat with uploaded PDF documents
+Auto-generate flashcards and quizzes from PDFs
+Summarize content intelligently
+Track learning progress over time
+Vector semantic search using embeddings
+Persistent chat history
+Secure authentication
+How It Works
 
-Context API (State Management)
+Smart Learning AI uses a Retrieval-Augmented Generation (RAG) pipeline with LangChain:
+
+User Query
+  ↓
+Text Splitting & Embedding Generation
+  ↓
+Vector Similarity Search (MongoDB + embeddings)
+  ↓
+Relevant Context Retrieval
+  ↓
+LLM Response Generation
+
+PDFs are chunked, embedded, and stored as vectors.
+Queries are matched with document chunks using vector similarity search before generating AI responses.
+The AI can generate flashcards, summaries, and quizzes from the same contextual data.
+System Architecture
+User
+  ↓
+Frontend (Vercel / React)
+  ↓
+Backend API (Render / Node.js + Express)
+  ↓
+MongoDB Atlas (Document Storage + Embeddings)
+
+Persistence:
+
+Database → MongoDB Atlas
+Uploaded PDFs → Backend storage on Render
+Tech Stack
+
+Frontend
+
+React
+Vite
+TailwindCSS
+Vercel
 
 Backend
-Node.js & Express.js
 
-MongoDB (Database with 2dsphere indexing for potential location features)
+Node.js
+Express
+LangChain
+Google Gemini AI
+MongoDB (Atlas)
 
-JWT (Secure Authentication)
+AI
 
-AI & Data Processing (GenAI)
-Google Gemini AI (LLM)
+Gemini models
+Gemini embeddings
+LangChain (TextSplitter, Retriever, Vector Embeddings)
 
-LangChain (Orchestration)
+Infrastructure
 
-Text Splitters (Recursive Character Splitting)
+Docker (optional)
+Render (Backend hosting)
+Vercel (Frontend hosting)
+Deployment Architecture
+Backend runs on Render with persistent storage for uploaded PDFs.
+Frontend is deployed on Vercel for fast CDN access.
+Vector embeddings are stored in MongoDB Atlas for scalable semantic search.
+CI/CD Pipeline
+Push code to GitHub
+GitHub Actions (optional) builds backend Docker image
+Deploy backend to Render
+Frontend auto-deploys via Vercel on commit
+Security
+Backend API secured with HTTPS
+User authentication ensures private access to uploaded documents and learning history
+Project Summary
 
-Embeddings & Vector Store (Efficient document retrieval)
+Smart Learning AI combines:
 
-📂 Project Structure
-Plaintext
-├── backend/
-│   ├── config/         # Database and Environment configs
-│   ├── controllers/    # Route logic
-│   ├── middleware/     # Auth & Error handling
-│   ├── models/         # MongoDB Schemas
-│   ├── routes/         # API Endpoints
-│   ├── services/       # LangChain & Gemini Logic
-│   └── server.js       # Entry point
-└── frontend/
-    ├── src/
-    │   ├── components/ # Reusable UI components
-    │   ├── context/    # Global state
-    │   ├── pages/      # View components
-    │   ├── services/   # API calling logic
-    │   └── utils/      # apiPaths and axiosInstances
-⚙️ Installation & Setup
-Clone the repository:
+RAG-based AI document retrieval
+Vector similarity search
+PDF-to-learning conversion (chat, flashcards, quizzes, summaries)
+Cloud-based scalable deployment
 
-Bash
-git clone https://github.com/abd360-collab/smart-learning-ai.git
-Backend Setup:
+to create a production-ready AI learning assistant.
 
-Navigate to /backend.
+About
 
-Install dependencies: npm install.
-
-Create a .env file and add:
-
-Code snippet
-PORT=5000
-MONGO_URI=your_mongodb_uri
-GEMINI_API_KEY=your_google_gemini_key
-JWT_SECRET=your_secret_key
-Start server: npm run dev.
-
-Frontend Setup:
-
-Navigate to /frontend/ai-learning-assistant.
-
-Install dependencies: npm install.
-
-Update src/utils/apiPaths.js to point to your backend.
-
-Start the app: npm run dev.
-
-📝 License
-Distributed under the MIT License.
-
-🤝 Contact
-Saurabh Chaubey - GitHub
-
-Project Link: https://smart-learning-ai-sigma.vercel.app
+Smart Learning AI enables students and professionals to convert static PDFs into interactive, AI-driven study experiences.
