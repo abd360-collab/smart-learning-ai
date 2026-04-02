@@ -73,37 +73,11 @@ MongoDB Atlas (Document Storage + Vector Embeddings)
 - LangChain (TextSplitter, Retriever, Vector Embeddings)  
 
 **Infrastructure**  
-- Docker (optional)  
 - Render (Backend hosting)  
 - Vercel (Frontend hosting)  
 
 ---
 
-## 🔄 CI/CD Workflow
-
-- Push code to GitHub  
-- Build Docker image (optional)  
-- Deploy backend to Render  
-- Frontend auto-deploys on Vercel  
-
-This ensures fast updates without losing stored data.  
-
----
-
-## 🔐 Security
-
-- HTTPS-secured backend API  
-- Private access with authentication  
-- Persistent data storage on cloud  
-
----
-
-## 🌟 Why This Project Stands Out
-
-- Demonstrates **full-stack MERN expertise**  
-- Implements **RAG & vector embeddings** with real-world PDFs  
-- Integrates **modern AI (Google Gemini)**  
-- Shows knowledge of **CI/CD, cloud deployment, and security best practices**  
 
 ---
 
@@ -118,14 +92,4 @@ Smart Learning AI combines:
 
 This makes it a **complete AI learning assistant**, ready for real users and impressive in interviews.  
 
----
 
-## 🎯 About Me
-
-Built by **[Your Name]**, a passionate full-stack developer exploring AI-powered applications and modern web technologies.  
-
----
-
-## 🖼 Screenshots / Demo
-
-> (Add GIFs/screenshots of the app here to showcase UI and chat features)
