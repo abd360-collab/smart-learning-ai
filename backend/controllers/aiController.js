@@ -5,6 +5,7 @@ import ChatHistory from '../models/ChatHistory.js';
 
 import * as geminiService from '../utils/geminiService.js';
 import { findRelevantChunks } from '../utils/textChunker.js';
+import { askQuestionFromText } from '../services/langchain.service.js';
 
 
 /**
@@ -195,92 +196,190 @@ export const generateSummary = async (req, res, next) => {
  * @route   POST /api/ai/chat
  * @access  Private
  */
+// export const chat = async (req, res, next) => {
+//   try {
+//     const { documentId, question } = req.body;
+
+//     if (!documentId || !question) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Please provide documentId and question'
+//       });
+//     }
+
+//     const document = await Document.findOne({
+//       _id: documentId,
+//       userId: req.user._id,
+//       status: 'ready'
+//     });
+
+//     if (!document) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'Document not found or not ready'
+//       });
+//     }
+
+//     // Find relevant chunks
+//     const relevantChunks = findRelevantChunks(
+//       document.chunks,
+//       question,
+//       3
+//     );
+//     const chunkIndices = relevantChunks.map(c => c.chunkIndex);
+
+//     // Get or create chat history
+//     let chatHistory = await ChatHistory.findOne({
+//       userId: req.user._id,
+//       documentId: document._id
+//     });
+
+//     if (!chatHistory) {
+//       chatHistory = await ChatHistory.create({
+//         userId: req.user._id,
+//         documentId: document._id,
+//         messages: []
+//       });
+//     }
+
+//     // Generate answer
+//     const answer = await geminiService.chatWithContext(
+//       question,
+//       relevantChunks
+//     );
+
+//     // Save conversation
+//     chatHistory.messages.push(
+//       {
+//         role: 'user',
+//         content: question,
+//         timestamp: new Date(),
+//         relevantChunks: []
+//       },
+//       {
+//         role: 'assistant',
+//         content: answer,
+//         timestamp: new Date(),
+//         relevantChunks: chunkIndices
+//       }
+//     );
+
+//     await chatHistory.save();
+
+//     res.status(200).json({
+//       success: true,
+//       data: {
+//         question,
+//         answer,
+//         relevantChunks: chunkIndices,
+//         chatHistoryId: chatHistory._id
+//       },
+//       message: 'Response generated successfully'
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+
+// ✅ NEW: LangChain service
+//import { askQuestionFromText } from '../services/langchain.service.js';
+
+
+/**
+ * @desc    Chat with document (LangChain version)
+ * @route   POST /api/ai/chat
+ * @access  Private
+ */
+
+
 export const chat = async (req, res, next) => {
   try {
     const { documentId, question } = req.body;
 
+    // 1️⃣ Validate input
     if (!documentId || !question) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide documentId and question'
+        error: "Please provide documentId and question",
       });
     }
 
+    // 2️⃣ Fetch document
     const document = await Document.findOne({
       _id: documentId,
       userId: req.user._id,
-      status: 'ready'
+      status: "ready",
     });
 
     if (!document) {
       return res.status(404).json({
         success: false,
-        error: 'Document not found or not ready'
+        error: "Document not found or not ready",
       });
     }
 
-    // Find relevant chunks
-    const relevantChunks = findRelevantChunks(
-      document.chunks,
-      question,
-      3
-    );
-    const chunkIndices = relevantChunks.map(c => c.chunkIndex);
-
-    // Get or create chat history
+    // 3️⃣ Get or create chat history
     let chatHistory = await ChatHistory.findOne({
       userId: req.user._id,
-      documentId: document._id
+      documentId: document._id,
     });
 
     if (!chatHistory) {
       chatHistory = await ChatHistory.create({
         userId: req.user._id,
         documentId: document._id,
-        messages: []
+        messages: [],
       });
     }
 
-    // Generate answer
-    const answer = await geminiService.chatWithContext(
-      question,
-      relevantChunks
-    );
+    // 4️⃣ Ask Mistral AI
+    let answer = await askQuestionFromText(document.extractedText, question);
 
-    // Save conversation
+    // 5️⃣ Fallback if AI returns nothing
+    if (!answer || typeof answer !== "string") {
+      answer = "Answer not found";
+    }
+
+    // 6️⃣ Save conversation safely
     chatHistory.messages.push(
       {
-        role: 'user',
+        role: "user",
         content: question,
         timestamp: new Date(),
-        relevantChunks: []
+        relevantChunks: [], // can populate later
       },
       {
-        role: 'assistant',
+        role: "assistant",
         content: answer,
         timestamp: new Date(),
-        relevantChunks: chunkIndices
+        relevantChunks: [], // can populate later
       }
     );
 
     await chatHistory.save();
 
+    // 7️⃣ Send response
     res.status(200).json({
       success: true,
       data: {
         question,
         answer,
-        relevantChunks: chunkIndices,
-        chatHistoryId: chatHistory._id
+        relevantChunks: [], // can populate later
+        chatHistoryId: chatHistory._id,
       },
-      message: 'Response generated successfully'
+      message: "Response generated successfully",
     });
   } catch (error) {
-    next(error);
+    console.error("Chat Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process question. Check API keys or network.",
+      error: error.message,
+    });
   }
 };
-
-
 /**
  * @desc    Explain a concept from document
  * @route   POST /api/ai/explain-concept
