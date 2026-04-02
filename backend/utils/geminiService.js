@@ -53,6 +53,7 @@ ${text.substring(0, 15000)}
     try {
 
       // ⏳ Timeout protection (15 seconds)
+      // 👉 It runs multiple promises and returns the one that finishes first
       const response = await Promise.race([
         ai.models.generateContent({
           model: 'gemini-2.5-flash-lite',
@@ -229,12 +230,27 @@ ${text.substring(0, 20000)}
 
 
 
+
+
+
+
+// 👉 This function:
+
+// Takes a user question
+// Takes document chunks (pieces of text)
+// Sends both to AI
+// AI answers using only that context
+
+// 👉 This concept is called:
+
+// 🧠 Context-based AI / Retrieval-Augmented Generation (RAG)
 /**
  * Chat with document context
  * @param {string} question - User question
  * @param {Array<{content: string}>} chunks - Relevant document chunks
  * @returns {Promise<string>}
  */
+
 export const chatWithContext = async (question, chunks) => {
   const context = chunks
     .map((c, i) => `[Chunk ${i + 1}]\n${c.content}`)

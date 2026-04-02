@@ -11,6 +11,19 @@ import mongoose from 'mongoose';
 //@desc  Upload PDF document
 //@route POST /api/documnets/upload
 //@access Private
+
+
+//REQ.FILE:
+// {
+//   fieldname: "file",
+//   originalname: "resume.pdf",
+//   encoding: "7bit",
+//   mimetype: "application/pdf",
+//   destination: "backend/uploads/documents",
+//   filename: "17123456789-123456789-resume.pdf",
+//   path: "backend/uploads/documents/17123456789-123456789-resume.pdf",
+//   size: 245678
+// }
 export const uploadDocument = async (req, res, next) => {
     try{
          if(!req.file) {
