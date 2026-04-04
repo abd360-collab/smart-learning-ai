@@ -45,7 +45,7 @@ Text:
 ${text.substring(0, 15000)}
 `;
 
-  const maxRetries = 2;
+  const maxRetries = 8;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
 
