@@ -422,13 +422,14 @@ ${text.substring(0, 12000)}
       }
 
     } catch (error) {
-      console.log(`❌ Flashcard attempt ${attempt} failed:`, error.message);
+  console.log("❌ FULL ERROR:", error);
+  console.log("❌ MESSAGE:", error.message);
+  console.log("❌ STACK:", error.stack);
 
-      if (attempt === maxRetries) {
-        console.error('Gemini API error:', error);
-        throw new Error('Failed to generate flashcards');
-      }
-    }
+  if (attempt === maxRetries) {
+    throw new Error('Failed to generate flashcards');
+  }
+}
   }
 };
 
