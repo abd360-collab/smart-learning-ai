@@ -56,7 +56,7 @@ ${text.substring(0, 15000)}
       // 👉 It runs multiple promises and returns the one that finishes first
       const response = await Promise.race([
         ai.models.generateContent({
-          model: 'gemini-2.5-flash-lite',
+          model: 'gemini-1.5-flash-lite',
           contents: prompt
         }),
         new Promise((_, reject) =>
@@ -141,7 +141,7 @@ ${text.substring(0, 15000)}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-1.5-flash-lite',
       contents: prompt
     });
 
