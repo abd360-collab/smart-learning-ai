@@ -417,63 +417,103 @@ ${text.substring(0, 15000)}
 /**
  * Generate quiz questions from text
  */
-export const generateQuiz = async (text, numQuestions = 5) => {
-  const prompt = `
-Generate exactly ${numQuestions} multiple choice questions from the following text.
-Format each question as:
-Q: [Question]
-01: [Option 1]
-02: [Option 2]
-03: [Option 3]
-04: [Option 4]
-C: [Correct option - exactly as written]
-E: [Brief explanation]
-D: [Difficulty: easy, medium, or hard]
-Separate questions with " --- "
+// export const generateQuiz = async (text, numQuestions = 5) => {
 
-Text:
-${text.substring(0, 15000)}
-`;
+  export const generateQuiz = async (text, numQuestions = 5) => {
+  // Define the schema to ensure the AI always returns the correct structure
+  const schema = {
+    description: "List of multiple choice questions",
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        question: { type: "string" },
+        options: { type: "array", items: { type: "string" } },
+        correctAnswer: { type: "string" },
+        explanation: { type: "string" },
+        difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
+      },
+      required: ["question", "options", "correctAnswer", "explanation", "difficulty"],
+    },
+  };
+
+  const modelWithJson = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+    },
+  });
+
+  const prompt = `Generate exactly ${numQuestions} multiple choice questions from the following text: ${text.substring(0, 15000)}`;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await modelWithJson.generateContent(prompt);
     const response = await result.response;
-    const generatedText = response.text();
-
-    const questions = [];
-    const blocks = generatedText.split(' --- ').filter(b => b.trim());
-
-    for (const block of blocks) {
-      const lines = block.trim().split('\n');
-      let question = '';
-      let options = [];
-      let correctAnswer = '';
-      let explanation = '';
-      let difficulty = 'medium';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('Q:')) question = trimmed.substring(2).trim();
-        else if (/^0\d:/.test(trimmed)) options.push(trimmed.substring(3).trim());
-        else if (trimmed.startsWith('C:')) correctAnswer = trimmed.substring(2).trim();
-        else if (trimmed.startsWith('E:')) explanation = trimmed.substring(2).trim();
-        else if (trimmed.startsWith('D:')) {
-          const diff = trimmed.substring(2).trim().toLowerCase();
-          if (['easy', 'medium', 'hard'].includes(diff)) difficulty = diff;
-        }
-      }
-
-      if (question && options.length === 4 && correctAnswer) {
-        questions.push({ question, options, correctAnswer, explanation, difficulty });
-      }
-    }
-
-    return questions.slice(0, numQuestions);
+    const jsonResponse = JSON.parse(response.text());
+    
+    return jsonResponse; // This will now be a clean array of objects
   } catch (error) {
-    console.error('Gemini API error:', error);
+    console.error('Gemini Quiz Generation Error:', error);
     throw new Error('Failed to generate quiz');
   }
 };
+//   const prompt = `
+// Generate exactly ${numQuestions} multiple choice questions from the following text.
+// Format each question as:
+// Q: [Question]
+// 01: [Option 1]
+// 02: [Option 2]
+// 03: [Option 3]
+// 04: [Option 4]
+// C: [Correct option - exactly as written]
+// E: [Brief explanation]
+// D: [Difficulty: easy, medium, or hard]
+// Separate questions with " --- "
+
+// Text:
+// ${text.substring(0, 15000)}
+// `;
+
+//   try {
+//     const result = await model.generateContent(prompt);
+//     const response = await result.response;
+//     const generatedText = response.text();
+
+//     const questions = [];
+//     const blocks = generatedText.split(' --- ').filter(b => b.trim());
+
+//     for (const block of blocks) {
+//       const lines = block.trim().split('\n');
+//       let question = '';
+//       let options = [];
+//       let correctAnswer = '';
+//       let explanation = '';
+//       let difficulty = 'medium';
+
+//       for (const line of lines) {
+//         const trimmed = line.trim();
+//         if (trimmed.startsWith('Q:')) question = trimmed.substring(2).trim();
+//         else if (/^0\d:/.test(trimmed)) options.push(trimmed.substring(3).trim());
+//         else if (trimmed.startsWith('C:')) correctAnswer = trimmed.substring(2).trim();
+//         else if (trimmed.startsWith('E:')) explanation = trimmed.substring(2).trim();
+//         else if (trimmed.startsWith('D:')) {
+//           const diff = trimmed.substring(2).trim().toLowerCase();
+//           if (['easy', 'medium', 'hard'].includes(diff)) difficulty = diff;
+//         }
+//       }
+
+//       if (question && options.length === 4 && correctAnswer) {
+//         questions.push({ question, options, correctAnswer, explanation, difficulty });
+//       }
+//     }
+
+//     return questions.slice(0, numQuestions);
+//   } catch (error) {
+//     console.error('Gemini API error:', error);
+//     throw new Error('Failed to generate quiz');
+//   }
+// };
 
 /**
  * Generate document summary
