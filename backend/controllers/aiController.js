@@ -115,7 +115,7 @@ export const generateQuiz = async (req, res, next) => {
     // --- CRITICAL FIX START ---
     // Check if questions actually exist and have items
     if (!questions || !Array.isArray(questions) || questions.length === 0) {
-      return res.status(422).json({
+      return res.status(402).json({
         success: false,
         error: 'AI failed to generate questions. The document might be too short or complex.'
       });
