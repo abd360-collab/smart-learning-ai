@@ -371,7 +371,7 @@ ${text.substring(0, 12000)}
 
       const response = await Promise.race([
         ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.0-flash',
           contents: prompt
         }),
         new Promise((_, reject) =>
@@ -460,7 +460,7 @@ ${text.substring(0, 12000)}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt
     });
 
@@ -525,7 +525,7 @@ ${text.substring(0, 12000)}
 export const generateSummary = async (text) => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: `
 Summarize clearly:
 
@@ -553,7 +553,7 @@ export const chatWithContext = async (question, chunks) => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: `
 Answer using ONLY context.
 
@@ -580,7 +580,7 @@ ${question}
 export const explainConcept = async (concept, context) => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: `
 Explain "${concept}" simply with examples.
 
