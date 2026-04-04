@@ -536,9 +536,14 @@ ${text.substring(0, 20000)}
     return extractText(response);
 
   } catch (error) {
-    console.error('Gemini API error:', error);
-    throw new Error('Failed to generate summary');
+  console.log("❌ FULL ERROR:", error);
+  console.log("❌ MESSAGE:", error.message);
+  console.log("❌ STACK:", error.stack);
+
+  if (attempt === maxRetries) {
+    throw new Error('Failed to generate flashcards');
   }
+}
 };
 
 
