@@ -53,10 +53,7 @@ const DocumentDetailPage = () => {
 
   
 
-  if (!document) {
-    return <div className="text-center p-8">Document not found.</div>;
-  }
-
+ 
   const renderContent = () => {
     if (loading) return <Spinner />;
 
@@ -114,6 +111,12 @@ const DocumentDetailPage = () => {
 
    
    if (loading) return <Spinner />;
+    if (!document) {
+    return <div className="text-center p-8">Document not found.</div>;
+  }
+
+
+  
   const tabs = [
     { name: "Content", label: "Content", content: renderContent() },
     { name: "Chat", label: "Chat", content: renderChat() },
