@@ -371,7 +371,7 @@ ${text.substring(0, 12000)}
 
       const response = await Promise.race([
         ai.models.generateContent({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt
         }),
         new Promise((_, reject) =>
@@ -460,7 +460,7 @@ ${text.substring(0, 12000)}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt
     });
 
