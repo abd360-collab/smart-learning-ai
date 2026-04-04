@@ -47,7 +47,9 @@ export const uploadDocument = async (req, res, next) => {
          }
 
          //Construct thr URL for the uploaded file
-         const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
+        const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://smart-learning-ai-dw4t.onrender.com' 
+    : `http://localhost:${process.env.PORT || 8000}`;
          const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
          //create document record
