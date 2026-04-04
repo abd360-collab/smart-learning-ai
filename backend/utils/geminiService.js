@@ -21,107 +21,18 @@ const ai = new GoogleGenAI({
  * @param {number} count - Number of flashcards to generate
  * @returns {Promise<Array<{question: string, answer: string, difficulty: string}>>}
  */
-// export const generateFlashcards = async (text, count = 10) => {
-
-//   const prompt = `
-// You MUST generate EXACTLY ${count} flashcards.
-
-// Return ONLY valid JSON.
-// Do NOT add markdown.
-// Do NOT add explanation.
-// Do NOT add extra text.
-
-// Format STRICTLY like this:
-
-// [
-//   {
-//     "question": "string",
-//     "answer": "string",
-//     "difficulty": "easy | medium | hard"
-//   }
-// ]
-
-// Text:
-// ${text.substring(0, 15000)}
-// `;
-
-//   const maxRetries = 8;
-
-//   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-
-//     try {
-
-//       // ⏳ Timeout protection (15 seconds)
-//       // 👉 It runs multiple promises and returns the one that finishes first
-//       const response = await Promise.race([
-//         ai.models.generateContent({
-//           model: 'gemini-1.5-flash-lite',
-//           contents: prompt
-//         }),
-//         new Promise((_, reject) =>
-//           setTimeout(() => reject(new Error('AI timeout')), 30000)
-//         )
-//       ]);
-
-//       const rawText = response.text.trim();
-
-//       // 🛑 Extract JSON safely
-//       const jsonStart = rawText.indexOf('[');
-//       const jsonEnd = rawText.lastIndexOf(']');
-
-//       if (jsonStart === -1 || jsonEnd === -1) {
-//         throw new Error('Invalid JSON format');
-//       }
-
-//       const jsonString = rawText.substring(jsonStart, jsonEnd + 1);
-
-//       let flashcards = JSON.parse(jsonString);
-
-//       if (!Array.isArray(flashcards)) {
-//         throw new Error('Response is not array');
-//       }
-
-//       // 🧠 Validate structure
-//       flashcards = flashcards
-//         .filter(card => card.question && card.answer)
-//         .map(card => ({
-//           question: card.question.trim(),
-//           answer: card.answer.trim(),
-//           difficulty: ['easy', 'medium', 'hard']
-//             .includes((card.difficulty || '').toLowerCase())
-//             ? card.difficulty.toLowerCase()
-//             : 'medium'
-//         }));
-
-//       if (flashcards.length === count) {
-//         return flashcards;
-//       }
-
-//       // ❌ If not exact count → retry
-//       if (attempt === maxRetries) {
-//         throw new Error('AI did not return exact number of cards');
-//       }
-
-//     } catch (error) {
-//       if (attempt === maxRetries) {
-//         console.error('Gemini API error:', error);
-//         throw new Error('Failed to generate flashcards');
-//       }
-//     }
-//   }
-// };
-
 export const generateFlashcards = async (text, count = 10) => {
 
   const prompt = `
-Generate EXACTLY ${count} flashcards.
+You MUST generate EXACTLY ${count} flashcards.
 
-STRICT RULES:
-- Return ONLY JSON array
-- No markdown, no explanation
-- Ensure valid JSON
+Return ONLY valid JSON.
+Do NOT add markdown.
+Do NOT add explanation.
+Do NOT add extra text.
 
-Format:
+Format STRICTLY like this:
+
 [
   {
     "question": "string",
@@ -131,83 +42,74 @@ Format:
 ]
 
 Text:
-${text.substring(0, 12000)}
+${text.substring(0, 15000)}
 `;
 
-  const maxRetries = 5;
+  const maxRetries = 8;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+
     try {
 
+      // ⏳ Timeout protection (15 seconds)
+      // 👉 It runs multiple promises and returns the one that finishes first
       const response = await Promise.race([
         ai.models.generateContent({
           model: 'gemini-1.5-flash-lite',
           contents: prompt
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 25000) // ⬅️ increased
+          setTimeout(() => reject(new Error('AI timeout')), 30000)
         )
       ]);
 
-      // ✅ safer extraction
-      const rawText =
-        response?.text ||
-        response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "";
+      const rawText = response.text.trim();
 
-      if (!rawText) throw new Error("Empty response");
-
-      // ✅ clean unwanted wrappers
-      const cleaned = rawText
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
-
-      const jsonStart = cleaned.indexOf('[');
-      const jsonEnd = cleaned.lastIndexOf(']');
+      // 🛑 Extract JSON safely
+      const jsonStart = rawText.indexOf('[');
+      const jsonEnd = rawText.lastIndexOf(']');
 
       if (jsonStart === -1 || jsonEnd === -1) {
-        throw new Error('No JSON array found');
+        throw new Error('Invalid JSON format');
       }
 
-      const jsonString = cleaned.slice(jsonStart, jsonEnd + 1);
+      const jsonString = rawText.substring(jsonStart, jsonEnd + 1);
 
       let flashcards = JSON.parse(jsonString);
 
       if (!Array.isArray(flashcards)) {
-        throw new Error('Not an array');
+        throw new Error('Response is not array');
       }
 
-      // ✅ sanitize
+      // 🧠 Validate structure
       flashcards = flashcards
-        .filter(c => c?.question && c?.answer)
-        .map(c => ({
-          question: c.question.trim(),
-          answer: c.answer.trim(),
-          difficulty: ['easy', 'medium', 'hard'].includes(
-            (c.difficulty || '').toLowerCase()
-          )
-            ? c.difficulty.toLowerCase()
+        .filter(card => card.question && card.answer)
+        .map(card => ({
+          question: card.question.trim(),
+          answer: card.answer.trim(),
+          difficulty: ['easy', 'medium', 'hard']
+            .includes((card.difficulty || '').toLowerCase())
+            ? card.difficulty.toLowerCase()
             : 'medium'
         }));
 
-      // ✅ allow tolerance (VERY IMPORTANT)
-      if (flashcards.length >= count) {
-        return flashcards.slice(0, count);
+      if (flashcards.length === count) {
+        return flashcards;
       }
 
-    } catch (err) {
-      console.log(`Attempt ${attempt} failed:`, err.message);
-
+      // ❌ If not exact count → retry
       if (attempt === maxRetries) {
-        throw new Error("Flashcard generation failed after retries");
+        throw new Error('AI did not return exact number of cards');
+      }
+
+    } catch (error) {
+      if (attempt === maxRetries) {
+        console.error('Gemini API error:', error);
+        throw new Error('Failed to generate flashcards');
       }
     }
   }
 };
-
-
-
 
 
 /**
