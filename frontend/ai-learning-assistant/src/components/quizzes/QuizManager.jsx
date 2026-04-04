@@ -50,6 +50,7 @@ const QuizManager = ({ documentId }) => {
       fetchQuizzes();
     } catch (error) {
       toast.error(error.message || 'Failed to generate quiz.');
+      setIsGenerateModalOpen(false);
     } finally {
       setGenerating(false);
     }
