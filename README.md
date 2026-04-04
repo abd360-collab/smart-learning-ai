@@ -6,7 +6,7 @@
 
 ## 🔗 Live Application
 
-- **Frontend:** [smart-learning-ai-sigma.vercel.app](https://smart-learning-ai-delta.vercel.app)  
+- **Frontend:** [smart-learning-ai-sigma.vercel.app](smart-learning-ai-delta.vercel.app)  
 - **Backend API:** [smart-learning-ai-dw4t.onrender.com](https://smart-learning-ai-dw4t.onrender.com)  
 
 ---
