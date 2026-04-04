@@ -119,6 +119,9 @@ ${text.substring(0, 15000)}
  * @param {number} numQuestions - Number of questions
  * @returns {Promise<Array>}
  */
+// Ensure you have the Google Generative AI package imported correctly
+// import { GoogleGenerativeAI } from "@google/generative-ai";
+
 export const generateQuiz = async (text, numQuestions = 5) => {
   const prompt = `
 Generate exactly ${numQuestions} multiple choice questions from the following text.
@@ -127,7 +130,7 @@ Format each question as:
 Q: [Question]
 01: [Option 1]
 02: [Option 2]
-03: [Option 3]
+03: [Option 4]
 04: [Option 4]
 C: [Correct option - exactly as written]
 E: [Brief explanation]
@@ -140,14 +143,21 @@ ${text.substring(0, 15000)}
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: prompt
-    });
+    // 1. Correct model initialization (ensure 'ai' is your GoogleGenerativeAI instance)
+    // const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+    
+    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent(prompt);
+    const response = await result.response;
+    
+    // 2. CRITICAL FIX: text is a function, not a property
+    const generatedText = response.text(); 
 
-    const generatedText = response.text;
+    if (!generatedText) {
+      throw new Error("AI returned empty content");
+    }
 
     const questions = [];
+    // 3. Logic remains exactly as you wrote it
     const blocks = generatedText.split(' --- ').filter(b => b.trim());
 
     for (const block of blocks) {
@@ -178,6 +188,7 @@ ${text.substring(0, 15000)}
         }
       }
 
+      // Only push if the block was parsed successfully
       if (question && options.length === 4 && correctAnswer) {
         questions.push({
           question,
@@ -189,15 +200,19 @@ ${text.substring(0, 15000)}
       }
     }
 
+    // Fallback in case the parser failed to find any valid blocks
+    if (questions.length === 0) {
+      console.error("Parser failed to find valid question blocks in:", generatedText);
+      throw new Error("Could not parse AI response into questions");
+    }
+
     return questions.slice(0, numQuestions);
   } catch (error) {
-    console.error('Gemini API error:', error);
-    throw new Error('Failed to generate quiz');
+    // 4. Detailed logging so you can see the error in Render
+    console.error('Gemini API error detail:', error); 
+    throw new Error(error.message || 'Failed to generate quiz');
   }
 };
-
-
-
 
 
 /**
