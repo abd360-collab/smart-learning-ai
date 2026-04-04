@@ -105,6 +105,13 @@ const DocumentDetailPage = () => {
     return <QuizManager documentId={id} />;
   };
 
+
+    if (loading) return <Spinner />;
+
+  if (!document) {
+    return <div className="text-center p-8">Document not found.</div>;
+  }
+
   const tabs = [
     { name: "Content", label: "Content", content: renderContent() },
     { name: "Chat", label: "Chat", content: renderChat() },
@@ -113,11 +120,6 @@ const DocumentDetailPage = () => {
     { name: "Quizzes", label: "Quizzes", content: renderQuizzesTab() },
   ];
 
-  if (loading) return <Spinner />;
-
-  if (!document) {
-    return <div className="text-center p-8">Document not found.</div>;
-  }
 
   return (
     <div>
