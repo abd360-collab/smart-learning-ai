@@ -5,8 +5,9 @@ import cloudinary from "./cloudinary.js";
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "documents", // folder in cloudinary
-    resource_type: "auto", // IMPORTANT for PDFs
+    folder: "documents",
+    resource_type: "raw",   // 🔥 keep this
+    type: "upload",         // 🔥 VERY IMPORTANT
   },
 });
 
