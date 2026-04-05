@@ -59,6 +59,7 @@ const DocumentDetailPage = () => {
     }
 
     const pdfUrl = getPdfUrl();
+     console.log("PDF URL:", pdfUrl); // ✅ correct place
 
     return (
       <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm">
