@@ -6,7 +6,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "documents", // folder in cloudinary
-    resource_type: "raw", // IMPORTANT for PDFs
+    resource_type: "auto", // IMPORTANT for PDFs
   },
 });
 
