@@ -4,7 +4,7 @@ import quizService from '../../services/quizService';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
-import { ArrowLeft, CheckCircle2, XCircle, Trophy, Target, BookOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Trophy, BookOpen } from 'lucide-react';
 
 const QuizResultPage = () => {
   const { quizId } = useParams();
@@ -29,7 +29,7 @@ const QuizResultPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex justify-center items-center min-h-[60vh]">
         <Spinner />
       </div>
     );
@@ -39,158 +39,96 @@ const QuizResultPage = () => {
   const detailedResults = quiz.results || [];
 
   if (!quiz || detailedResults.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-slate-600 text-lg">Quiz results not found.</p>
-      </div>
-    );
+    return <div className="text-center mt-10">No results found</div>;
   }
 
-  // ✅ SCORE FIX (index-based)
+  // ✅ SCORE (INDEX BASED)
   const correctAnswers = detailedResults.filter(
-    r => parseInt(r.selectedAnswer) === parseInt(r.correctAnswer)
+    r => Number(r.selectedAnswer) === Number(r.correctAnswer)
   ).length;
 
-  const totalQuestions = quiz.totalQuestions || detailedResults.length;
+  const totalQuestions = detailedResults.length;
   const incorrectAnswers = totalQuestions - correctAnswers;
-
-  const score = totalQuestions
-    ? Math.round((correctAnswers / totalQuestions) * 100)
-    : 0;
-
-  const getScoreColor = (score) => {
-    if (score >= 80) return 'from-emerald-500 to-teal-500';
-    if (score >= 60) return 'from-amber-500 to-orange-500';
-    return 'from-rose-500 to-red-500';
-  };
-
-  const getScoreMessage = (score) => {
-    if (score >= 90) return 'Outstanding!';
-    if (score >= 80) return 'Great job!';
-    if (score >= 70) return 'Good work!';
-    if (score >= 60) return 'Not bad!';
-    return 'Keep practicing!';
-  };
+  const score = Math.round((correctAnswers / totalQuestions) * 100);
 
   return (
-    <div className='max-w-5xl mx-auto px-4 py-8'>
+    <div className="max-w-4xl mx-auto p-6">
 
-      {/* Back */}
-      <div className='mb-6'>
-        <Link
-          to={`/documents/${quiz.document?._id}`}
-          className='inline-flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-600'
-        >
-          <ArrowLeft className='w-4 h-4' />
-          Back to document
-        </Link>
+      {/* BACK */}
+      <Link to={`/documents/${quiz.document?._id}`} className="flex items-center gap-2 mb-6">
+        <ArrowLeft /> Back
+      </Link>
+
+      <PageHeader title="Quiz Results" />
+
+      {/* SCORE */}
+      <div className="text-center mb-10">
+        <Trophy className="mx-auto text-green-600 mb-2" />
+        <h1 className="text-4xl font-bold">{score}%</h1>
+        <p>{correctAnswers} Correct / {totalQuestions}</p>
       </div>
 
-      <PageHeader title={`${quiz.title || 'Quiz'} Results`} />
-
-      {/* Score */}
-      <div className='bg-white border rounded-2xl p-8 mb-10 text-center shadow'>
-        <Trophy className='mx-auto w-10 h-10 text-emerald-600 mb-3' />
-        <h2 className={`text-5xl font-bold bg-gradient-to-r ${getScoreColor(score)} bg-clip-text text-transparent`}>
-          {score}%
+      {/* QUESTIONS */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <BookOpen /> Detailed Review
         </h2>
-        <p className='mt-2 text-lg'>{getScoreMessage(score)}</p>
 
-        <div className='flex justify-center gap-4 mt-6'>
-          <div>{totalQuestions} Total</div>
-          <div className='text-green-600'>{correctAnswers} Correct</div>
-          <div className='text-red-600'>{incorrectAnswers} Wrong</div>
-        </div>
-      </div>
+        {detailedResults.map((q, index) => {
 
-      {/* Questions */}
-      <div className='space-y-6'>
-        <h3 className='text-xl font-bold flex items-center gap-2'>
-          <BookOpen className='w-5 h-5' />
-          Detailed Review
-        </h3>
+          // ✅ FIXED LOGIC
+          const correctIndex = Number(q.correctAnswer) - 1;
+          const userIndex = Number(q.selectedAnswer) - 1;
 
-        {detailedResults.map((result, index) => {
-          // ✅ FIX: index-based logic
-          const correctAnswerIndex = parseInt(result.correctAnswer) - 1;
-          const userAnswerIndex = parseInt(result.selectedAnswer) - 1;
-
-          const isCorrect = userAnswerIndex === correctAnswerIndex;
+          const isCorrect = correctIndex === userIndex;
 
           return (
-            <div key={index} className='border rounded-xl p-5 bg-white shadow-sm'>
+            <div key={index} className="border p-4 rounded-lg">
 
-              {/* Question */}
-              <div className='flex justify-between mb-3'>
-                <h4 className='font-semibold'>
-                  Q{index + 1}. {result.question}
-                </h4>
+              <div className="flex justify-between mb-2">
+                <h3 className="font-semibold">
+                  Q{index + 1}. {q.question}
+                </h3>
 
                 {isCorrect ? (
-                  <CheckCircle2 className='text-green-600' />
+                  <CheckCircle2 className="text-green-600" />
                 ) : (
-                  <XCircle className='text-red-600' />
+                  <XCircle className="text-red-600" />
                 )}
               </div>
 
-              {/* Options */}
-              <div className='space-y-2'>
-                {result.options.map((opt, i) => {
-                  const isCorrectOption = i === correctAnswerIndex;
-                  const isUserOption = i === userAnswerIndex;
-                  const isWrong = isUserOption && !isCorrectOption;
+              {/* OPTIONS */}
+              {q.options.map((opt, i) => {
+                const isCorrectOption = i === correctIndex;
+                const isUserOption = i === userIndex;
 
-                  return (
-                    <div
-                      key={i}
-                      className={`p-3 rounded border ${
-                        isCorrectOption
-                          ? 'bg-green-100 border-green-400'
-                          : isWrong
-                          ? 'bg-red-100 border-red-400'
-                          : 'bg-gray-50'
-                      }`}
-                    >
-                      <div className='flex justify-between'>
-                        <span>{opt}</span>
+                return (
+                  <div
+                    key={i}
+                    className={`p-2 my-1 rounded border ${
+                      isCorrectOption
+                        ? 'bg-green-100 border-green-400'
+                        : isUserOption
+                        ? 'bg-red-100 border-red-400'
+                        : ''
+                    }`}
+                  >
+                    {opt}
+                  </div>
+                );
+              })}
 
-                        {isCorrectOption && (
-                          <span className='text-xs bg-green-300 px-2 rounded'>
-                            Correct
-                          </span>
-                        )}
-
-                        {isWrong && (
-                          <span className='text-xs bg-red-300 px-2 rounded'>
-                            Your Answer
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Explanation */}
-              {result.explanation && (
-                <div className='mt-3 p-3 bg-gray-50 rounded'>
-                  <p className='text-sm italic'>{result.explanation}</p>
-                </div>
+              {/* EXPLANATION */}
+              {q.explanation && (
+                <p className="mt-2 text-sm italic text-gray-600">
+                  {q.explanation}
+                </p>
               )}
+
             </div>
           );
         })}
       </div>
-
-      {/* Button */}
-      <div className="mt-8 flex justify-center">
-        <Link to={`/documents/${quiz?.document?._id}`}>
-          <button className="px-6 py-2 bg-green-500 text-white rounded-lg">
-            Back to Document
-          </button>
-        </Link>
-      </div>
-
     </div>
   );
 };
