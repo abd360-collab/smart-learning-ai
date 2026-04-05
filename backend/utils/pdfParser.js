@@ -1,27 +1,29 @@
-import fs from "fs/promises";
+import axios from "axios";
 import { PDFParse } from "pdf-parse";
 
 /** 
-* &Extract text from PDF file
-* @param {string} filePath - Path to PDF file
-* @returns {Promise<{text: string, numPages: number}>}
-*/
-export const extractTextFromPDF = async (filePath) => {
-try {
-const dataBuffer = await fs.readFile(filePath);
+ * Extract text from PDF (supports Cloudinary URL)
+ */
+export const extractTextFromPDF = async (fileUrl) => {
+  try {
+    // 🔥 Download file from Cloudinary
+    const response = await axios.get(fileUrl, {
+      responseType: "arraybuffer",
+    });
 
-// pdf-parse expects a Uint8Array, not a Buffer
-const parser = new PDFParse(new Uint8Array(dataBuffer));
-const data = await parser.getText();
+    // Convert to Uint8Array
+    const parser = new PDFParse(new Uint8Array(response.data));
 
-return {
-text: data.text,
-numPages: data.numpages,
-info: data.info,
+    const data = await parser.getText();
 
-} 
-}catch (error) {
-console. error("PDF parsing error:", error);
-throw new Error("Failed to extract text from PDF");
-}
+    return {
+      text: data.text,
+      numPages: data.numpages,
+      info: data.info,
+    };
+
+  } catch (error) {
+    console.error("PDF parsing error:", error);
+    throw new Error("Failed to extract text from PDF");
+  }
 };
