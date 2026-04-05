@@ -19,6 +19,7 @@
     "@langchain/mistralai": "^1.0.7",
     "@langchain/textsplitters": "^1.0.1",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
@@ -27,6 +28,7 @@
     "langchain": "^1.2.39",
     "mongoose": "^9.1.6",
     "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "pdf-parse": "^2.4.5"
   },
   "devDependencies": {

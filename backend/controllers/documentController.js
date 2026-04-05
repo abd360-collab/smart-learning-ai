@@ -47,10 +47,10 @@ export const uploadDocument = async (req, res, next) => {
          }
 
          //Construct thr URL for the uploaded file
-        const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://smart-learning-ai-dw4t.onrender.com' 
-    : `http://localhost:${process.env.PORT || 8000}`;
-         const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
+    //     const baseUrl = process.env.NODE_ENV === 'production' 
+    // ? 'https://smart-learning-ai-dw4t.onrender.com' 
+    // : `http://localhost:${process.env.PORT || 8000}`;
+    //      const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
          //create document record
 
@@ -58,7 +58,7 @@ export const uploadDocument = async (req, res, next) => {
             userId: req.user._id,
             title,
             fileName: req.file.originalname,
-            filePath: fileUrl, // Store the URL instead of local path
+            filePath: req.file.path,
             fileSize: req.file.size,
             status: 'processing'
          });

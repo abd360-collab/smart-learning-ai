@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 dotenv. config();
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -41,10 +40,10 @@ app.use(express.urlencoded({ extended : true}));
 
 //static folder for uploads
 //app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "backend", "uploads"))
-);
+// app.use(
+//   "/uploads",
+//   express.static(path.join(process.cwd(), "backend", "uploads"))
+// );
 
 
 //Routes
