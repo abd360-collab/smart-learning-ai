@@ -113,6 +113,7 @@ export const generateQuiz = async (req, res, next) => {
 
     // --- CRITICAL FIX START ---
     // Check if questions actually exist and have items
+    console.log(questions);
     if (!questions || !Array.isArray(questions) || questions.length === 0) {
       return res.status(422).json({
         success: false,
