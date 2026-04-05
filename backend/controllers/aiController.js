@@ -5,7 +5,6 @@ import ChatHistory from '../models/ChatHistory.js';
 
 import * as geminiService from '../utils/geminiService.js';
 import { findRelevantChunks } from '../utils/textChunker.js';
-import { askQuestionFromText } from '../services/langchain.service.js';
 
 
 /**
@@ -115,7 +114,7 @@ export const generateQuiz = async (req, res, next) => {
     // --- CRITICAL FIX START ---
     // Check if questions actually exist and have items
     if (!questions || !Array.isArray(questions) || questions.length === 0) {
-      return res.status(402).json({
+      return res.status(422).json({
         success: false,
         error: 'AI failed to generate questions. The document might be too short or complex.'
       });
@@ -284,7 +283,7 @@ export const generateSummary = async (req, res, next) => {
 
 
 // ✅ NEW: LangChain service
-//import { askQuestionFromText } from '../services/langchain.service.js';
+import { askQuestionFromText } from '../services/langchain.service.js';
 
 
 /**
@@ -292,8 +291,6 @@ export const generateSummary = async (req, res, next) => {
  * @route   POST /api/ai/chat
  * @access  Private
  */
-
-
 export const chat = async (req, res, next) => {
   try {
     const { documentId, question } = req.body;
@@ -302,7 +299,7 @@ export const chat = async (req, res, next) => {
     if (!documentId || !question) {
       return res.status(400).json({
         success: false,
-        error: "Please provide documentId and question",
+        error: 'Please provide documentId and question'
       });
     }
 
@@ -310,76 +307,72 @@ export const chat = async (req, res, next) => {
     const document = await Document.findOne({
       _id: documentId,
       userId: req.user._id,
-      status: "ready",
+      status: 'ready'
     });
 
     if (!document) {
       return res.status(404).json({
         success: false,
-        error: "Document not found or not ready",
+        error: 'Document not found or not ready'
       });
     }
 
     // 3️⃣ Get or create chat history
     let chatHistory = await ChatHistory.findOne({
       userId: req.user._id,
-      documentId: document._id,
+      documentId: document._id
     });
 
     if (!chatHistory) {
       chatHistory = await ChatHistory.create({
         userId: req.user._id,
         documentId: document._id,
-        messages: [],
+        messages: []
       });
     }
 
-    // 4️⃣ Ask Mistral AI
-    let answer = await askQuestionFromText(document.extractedText, question);
+    // ✅ 4️⃣ NEW: Use LangChain instead of manual chunking
+    const answer = await askQuestionFromText(
+      document.extractedText,
+      question
+    );
 
-    // 5️⃣ Fallback if AI returns nothing
-    if (!answer || typeof answer !== "string") {
-      answer = "Answer not found";
-    }
-
-    // 6️⃣ Save conversation safely
+    // 5️⃣ Save conversation
     chatHistory.messages.push(
       {
-        role: "user",
+        role: 'user',
         content: question,
         timestamp: new Date(),
-        relevantChunks: [], // can populate later
+        relevantChunks: [] // temporary empty
       },
       {
-        role: "assistant",
+        role: 'assistant',
         content: answer,
         timestamp: new Date(),
-        relevantChunks: [], // can populate later
+        relevantChunks: [] // temporary empty
       }
     );
 
     await chatHistory.save();
 
-    // 7️⃣ Send response
+    // 6️⃣ Send response
     res.status(200).json({
       success: true,
       data: {
         question,
         answer,
-        relevantChunks: [], // can populate later
-        chatHistoryId: chatHistory._id,
+        relevantChunks: [], // temporary empty
+        chatHistoryId: chatHistory._id
       },
-      message: "Response generated successfully",
+      message: 'Response generated successfully'
     });
+
   } catch (error) {
     console.error("Chat Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to process question. Check API keys or network.",
-      error: error.message,
-    });
+    next(error);
   }
 };
+
 /**
  * @desc    Explain a concept from document
  * @route   POST /api/ai/explain-concept
