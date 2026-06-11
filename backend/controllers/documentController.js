@@ -119,37 +119,75 @@ const processPDF = async (documentId, filePath) => {
 // @access  Private
 export const getDocuments = async (req, res, next) => {
   try {
-    const documents = await Document.aggregate([
-      {
-        $match: { userId: req.user._id }
-      },
-      {
-        $lookup: {
-          from: 'flashcards',
-          localField: '_id',
-          foreignField: 'documentId',
-          as: 'flashcardSets'
-        }
-      },
-      {
-        $addFields: {
-          flashcardCount: { $size: '$flashcardSets' },
-          quizCount: { $size: { $ifNull: ['$quizzes', []] } }
-        }
-      },
-      {
-        $project: {
-          extractedText: 0,
-          chunks: 0,
-          flashcardSets: 0,
-          quizzes: 0
-        }
-      },
-      {
-        $sort: { uploadDate: -1 }
-      }
-    ]);
+    // const documents = await Document.aggregate([
+    //   {
+    //     $match: { userId: req.user._id }
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: 'flashcards',
+    //       localField: '_id',
+    //       foreignField: 'documentId',
+    //       as: 'flashcardSets'
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       flashcardCount: { $size: '$flashcardSets' },
+    //       quizCount: { $size: { $ifNull: ['$quizzes', []] } }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       extractedText: 0,
+    //       chunks: 0,
+    //       flashcardSets: 0,
+    //       quizzes: 0
+    //     }
+    //   },
+    //   {
+    //     $sort: { uploadDate: -1 }
+    //   }
+    // ]);
 
+    const documents = await Document.aggregate([
+  {
+    $match: { userId: req.user._id }
+  },
+  {
+    $lookup: {
+      from: 'flashcards',
+      localField: '_id',
+      foreignField: 'documentId',
+      as: 'flashcardSets'
+    }
+  },
+  {
+    $lookup: {
+      from: 'quizzes',
+      localField: '_id',
+      foreignField: 'documentId',
+      as: 'quizzes'
+    }
+  },
+  {
+    $addFields: {
+      flashcardCount: { $size: '$flashcardSets' },
+      quizCount: { $size: '$quizzes' }
+    }
+  },
+  {
+    $project: {
+      extractedText: 0,
+      chunks: 0,
+      flashcardSets: 0,
+      quizzes: 0
+    }
+  },
+  {
+    $sort: { uploadDate: -1 }
+  }
+]);
     res.status(200).json({
       success: true,
       count: documents.length,
