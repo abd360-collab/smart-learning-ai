@@ -25,7 +25,7 @@ const QuizCard = ({ quiz, onDelete }) => {
           <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1">
             <Award className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2.5} />
             <span className="text-emerald-700">
-              Score: {quiz?.score ?? 0}
+              Score: {quiz?.score ?? 0}%
             </span>
           </div>
         </div>

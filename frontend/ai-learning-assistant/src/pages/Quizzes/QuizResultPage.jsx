@@ -30,16 +30,25 @@ const QuizResultPage = () => {
   const quiz = results?.quiz || {};
   const detailedResults = quiz.results || [];
 
-  const correctAnswers = detailedResults.filter(result => {
-    const correctIndex = Number(result.correctAnswer) - 1;
-    const userIndex = result.options.findIndex(
-      opt => opt.trim().toLowerCase() === result.selectedAnswer?.trim().toLowerCase()
-    );
-    return userIndex === correctIndex;
-  }).length;
+  // const correctAnswers = detailedResults.filter(result => {
+  //   const correctIndex = Number(result.correctAnswer) - 1;
+  //   const userIndex = result.options.findIndex(
+  //     opt => opt.trim().toLowerCase() === result.selectedAnswer?.trim().toLowerCase()
+  //   );
+  //   return userIndex === correctIndex;
+  // }).length;
 
-  const totalQuestions = detailedResults.length;
-  const score = Math.round((correctAnswers / totalQuestions) * 100);
+  // const totalQuestions = detailedResults.length;
+  // const score = Math.round((correctAnswers / totalQuestions) * 100);
+
+
+
+  const correctAnswers = detailedResults.filter(
+  result => result.isCorrect
+).length;
+
+const totalQuestions = detailedResults.length;
+const score = quiz.score ?? 0;
 
   // Determine feedback message/color based on score
   const getPerformanceData = (score) => {
@@ -93,7 +102,8 @@ const QuizResultPage = () => {
             const userIndex = q.options.findIndex(
               opt => opt.trim().toLowerCase() === q.selectedAnswer?.trim().toLowerCase()
             );
-            const isCorrect = userIndex === correctIndex;
+            // const isCorrect = userIndex === correctIndex;
+            const isCorrect = q.isCorrect;
 
             return (
               <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">

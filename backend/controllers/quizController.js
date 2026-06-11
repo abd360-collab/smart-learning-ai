@@ -86,25 +86,64 @@ export const submitQuiz = async (req, res, next) => {
       });
     }
 
+    // let correctCount = 0;
+    // const userAnswers = [];
+
+    // answers.forEach(({ questionIndex, selectedAnswer }) => {
+    //   if (questionIndex < quiz.questions.length) {
+    //     const question = quiz.questions[questionIndex];
+    //     const isCorrect = selectedAnswer === question.correctAnswer;
+
+    //     if (isCorrect) correctCount++;
+
+    //     userAnswers.push({
+    //       questionIndex,
+    //       selectedAnswer,
+    //       isCorrect,
+    //       answeredAt: new Date()
+    //     });
+    //   }
+    // });
+
+
+
     let correctCount = 0;
-    const userAnswers = [];
+const userAnswers = [];
 
-    answers.forEach(({ questionIndex, selectedAnswer }) => {
-      if (questionIndex < quiz.questions.length) {
-        const question = quiz.questions[questionIndex];
-        const isCorrect = selectedAnswer === question.correctAnswer;
+const normalize = (value) =>
+  String(value || '').trim().toLowerCase();
 
-        if (isCorrect) correctCount++;
+answers.forEach(({ questionIndex, selectedAnswer }) => {
+  if (questionIndex < quiz.questions.length) {
+    const question = quiz.questions[questionIndex];
 
-        userAnswers.push({
-          questionIndex,
-          selectedAnswer,
-          isCorrect,
-          answeredAt: new Date()
-        });
-      }
+    let correctAnswerText = question.correctAnswer;
+
+    // Case 1: correctAnswer is "1", "2", "3", or "4"
+    const correctOptionIndex = Number(question.correctAnswer) - 1;
+
+    if (
+      !Number.isNaN(correctOptionIndex) &&
+      correctOptionIndex >= 0 &&
+      correctOptionIndex < question.options.length
+    ) {
+      correctAnswerText = question.options[correctOptionIndex];
+    }
+
+    // Case 2: correctAnswer is already full option text
+    const isCorrect =
+      normalize(selectedAnswer) === normalize(correctAnswerText);
+
+    if (isCorrect) correctCount++;
+
+    userAnswers.push({
+      questionIndex,
+      selectedAnswer,
+      isCorrect,
+      answeredAt: new Date()
     });
-
+  }
+});
     const score = Math.round(
       (correctCount / quiz.totalQuestions) * 100
     );
