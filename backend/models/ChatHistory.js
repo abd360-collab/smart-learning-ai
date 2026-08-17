@@ -25,10 +25,14 @@ const chatHistorySchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         },
-        relevantChunks: {
-            type: [Number],
-            default: []
-        }
+        // relevantChunks: {
+        //     type: [Number],
+        //     default: []
+        // }
+        relevantChunks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DocumentChunk'
+}]
     }]
 }, {
     timestamps: true

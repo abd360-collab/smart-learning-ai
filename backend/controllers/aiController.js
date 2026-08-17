@@ -284,96 +284,189 @@ export const generateSummary = async (req, res, next) => {
 
 
 // ✅ NEW: LangChain service
-import { askQuestionFromText } from '../services/langchain.service.js';
-
+// import { askQuestionFromText } from '../services/langchain.service.js';
+import { askQuestionFromDocument } from '../services/langchain.service.js';
 
 /**
  * @desc    Chat with document (LangChain version)
  * @route   POST /api/ai/chat
  * @access  Private
  */
+// export const chat = async (req, res, next) => {
+//   try {
+//     const { documentId, question } = req.body;
+
+//     // 1️⃣ Validate input
+//     if (!documentId || !question) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Please provide documentId and question'
+//       });
+//     }
+
+//     // 2️⃣ Fetch document
+//     const document = await Document.findOne({
+//       _id: documentId,
+//       userId: req.user._id,
+//       status: 'ready'
+//     });
+
+//     if (!document) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'Document not found or not ready'
+//       });
+//     }
+
+//     // 3️⃣ Get or create chat history
+//     let chatHistory = await ChatHistory.findOne({
+//       userId: req.user._id,
+//       documentId: document._id
+//     });
+
+//     if (!chatHistory) {
+//       chatHistory = await ChatHistory.create({
+//         userId: req.user._id,
+//         documentId: document._id,
+//         messages: []
+//       });
+//     }
+
+//     // ✅ 4️⃣ NEW: Use LangChain instead of manual chunking
+//     // const answer = await askQuestionFromText(
+//     //   document.extractedText,
+//     //   question
+//     // );
+
+// //     const answer = await askQuestionFromDocument(
+// //     documentId,
+// //     req.user._id,
+// //     question
+// // );
+
+// const retrievedChunks = await askQuestionFromDocument(
+//     documentId,
+//     req.user._id,
+//     question
+// );
+
+// return res.status(200).json({
+//     success: true,
+//     retrievedChunks
+// });
+//     // 5️⃣ Save conversation
+//     chatHistory.messages.push(
+//       {
+//         role: 'user',
+//         content: question,
+//         timestamp: new Date(),
+//         relevantChunks: [] // temporary empty
+//       },
+//       {
+//         role: 'assistant',
+//         content: answer,
+//         timestamp: new Date(),
+//         relevantChunks: [] // temporary empty
+//       }
+//     );
+
+//     await chatHistory.save();
+
+//     // 6️⃣ Send response
+//     res.status(200).json({
+//       success: true,
+//       data: {
+//         question,
+//         answer,
+//         relevantChunks: [], // temporary empty
+//         chatHistoryId: chatHistory._id
+//       },
+//       message: 'Response generated successfully'
+//     });
+
+//   } catch (error) {
+//     console.error("Chat Error:", error);
+//     next(error);
+//   }
+// };
 export const chat = async (req, res, next) => {
-  try {
-    const { documentId, question } = req.body;
+    try {
+        const { documentId, question } = req.body;
 
-    // 1️⃣ Validate input
-    if (!documentId || !question) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please provide documentId and question'
-      });
+        if (!documentId || !question) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide documentId and question'
+            });
+        }
+
+        const document = await Document.findOne({
+            _id: documentId,
+            userId: req.user._id,
+            status: 'ready'
+        });
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                error: 'Document not found or not ready'
+            });
+        }
+
+        let chatHistory = await ChatHistory.findOne({
+            userId: req.user._id,
+            documentId: document._id
+        });
+
+        if (!chatHistory) {
+            chatHistory = await ChatHistory.create({
+                userId: req.user._id,
+                documentId: document._id,
+                messages: []
+            });
+        }
+
+        // NEW RAG PIPELINE
+        const result = await askQuestionFromDocument(
+            documentId,
+            req.user._id,
+            question
+        );
+
+        // Save conversation
+        chatHistory.messages.push(
+            {
+                role: 'user',
+                content: question,
+                timestamp: new Date(),
+                relevantChunks: result.relevantChunks
+            },
+            {
+                role: 'assistant',
+                content: result.answer,
+                timestamp: new Date(),
+                relevantChunks: result.relevantChunks
+            }
+        );
+
+        await chatHistory.save();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                question,
+                answer: result.answer,
+                relevantChunks: result.relevantChunks,
+                chatHistoryId: chatHistory._id
+            },
+            message: 'Response generated successfully'
+        });
+
+    } catch (error) {
+        console.error("Chat Error:", error);
+        next(error);
     }
-
-    // 2️⃣ Fetch document
-    const document = await Document.findOne({
-      _id: documentId,
-      userId: req.user._id,
-      status: 'ready'
-    });
-
-    if (!document) {
-      return res.status(404).json({
-        success: false,
-        error: 'Document not found or not ready'
-      });
-    }
-
-    // 3️⃣ Get or create chat history
-    let chatHistory = await ChatHistory.findOne({
-      userId: req.user._id,
-      documentId: document._id
-    });
-
-    if (!chatHistory) {
-      chatHistory = await ChatHistory.create({
-        userId: req.user._id,
-        documentId: document._id,
-        messages: []
-      });
-    }
-
-    // ✅ 4️⃣ NEW: Use LangChain instead of manual chunking
-    const answer = await askQuestionFromText(
-      document.extractedText,
-      question
-    );
-
-    // 5️⃣ Save conversation
-    chatHistory.messages.push(
-      {
-        role: 'user',
-        content: question,
-        timestamp: new Date(),
-        relevantChunks: [] // temporary empty
-      },
-      {
-        role: 'assistant',
-        content: answer,
-        timestamp: new Date(),
-        relevantChunks: [] // temporary empty
-      }
-    );
-
-    await chatHistory.save();
-
-    // 6️⃣ Send response
-    res.status(200).json({
-      success: true,
-      data: {
-        question,
-        answer,
-        relevantChunks: [], // temporary empty
-        chatHistoryId: chatHistory._id
-      },
-      message: 'Response generated successfully'
-    });
-
-  } catch (error) {
-    console.error("Chat Error:", error);
-    next(error);
-  }
 };
-
 /**
  * @desc    Explain a concept from document
  * @route   POST /api/ai/explain-concept

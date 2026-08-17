@@ -15,8 +15,32 @@ const router = express.Router();
 router.use(protect);
 
 // Upload document
-router.post('/upload', upload.single('file'), uploadDocument);
+//router.post('/upload', upload.single('file'), uploadDocument);
+router.post(
+    '/upload',
+    (req, res, next) => {
+        console.log("🔥 BEFORE MULTER");
 
+        upload.single('file')(req, res, (err) => {
+            if (err) {
+                console.log("🔥 MULTER RAW ERROR");
+                console.log(err);
+                console.log("TYPE:", typeof err);
+                console.log("JSON:", JSON.stringify(err));
+
+                return res.status(500).json({
+                    success: false,
+                    multerError: String(err),
+                    multerErrorObject: err
+                });
+            }
+
+            console.log("🔥 AFTER MULTER");
+            next();
+        });
+    },
+    uploadDocument
+);
 // Get all documents
 router.get('/', getDocuments);
 

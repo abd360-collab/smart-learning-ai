@@ -5,7 +5,8 @@ import { extractTextFromPDF } from '../utils/pdfParser.js';
 import { chunkText } from '../utils/textChunker.js';
 import fs from 'fs/promises';
 import mongoose from 'mongoose';
-
+import { MistralAIEmbeddings } from "@langchain/mistralai";
+import DocumentChunk from "../models/documentChunk.js";
 
 
 //@desc  Upload PDF document
@@ -26,6 +27,13 @@ import mongoose from 'mongoose';
 // }
 export const uploadDocument = async (req, res, next) => {
     try{
+      console.log("🔥 uploadDocument CONTROLLER REACHED");
+
+       console.log("========== UPLOAD START ==========");
+
+        console.log("req.file:", req.file);
+        console.log("req.body:", req.body);
+        console.log("req.user:", req.user);
          if(!req.file) {
             return res.status(400).json({
                 success: false,
@@ -87,31 +95,110 @@ export const uploadDocument = async (req, res, next) => {
 
 
 //Helper function to process PDF
+// const processPDF = async (documentId, filePath) => {
+//     try {
+//         const {text} = await extractTextFromPDF(filePath);
+
+//         //Create chunks
+//         const chunks = chunkText(text, 500, 50);
+
+//         const embeddings = new MistralAIEmbeddings({
+//     model: "mistral-embed",
+//     apiKey: process.env.MISTRAL_API_KEY,
+// });
+
+//         //update document
+//         await Document.findByIdAndUpdate(documentId, {
+//             extractedText: text,
+//             chunks: chunks,
+//             status: 'ready'
+//         });
+
+//         console.log(`Document ${documentId} processed successfully`);
+//     }
+//     catch (error) {
+//         console.error(`Error processing document ${documentId}:`, error);
+
+//         await Document.findByIdAndUpdate(documentId, {
+//             status: 'failed'
+//         });
+//     }
+// }
 const processPDF = async (documentId, filePath) => {
     try {
-        const {text} = await extractTextFromPDF(filePath);
+        // 1. Extract text from PDF
+        const { text } = await extractTextFromPDF(filePath);
 
-        //Create chunks
+        // 2. Create chunks
         const chunks = chunkText(text, 500, 50);
 
-        //update document
+        if (chunks.length === 0) {
+            throw new Error("No text could be extracted from PDF");
+        }
+
+        // 3. Create embedding model
+        const embeddings = new MistralAIEmbeddings({
+            model: "mistral-embed",
+            apiKey: process.env.MISTRAL_API_KEY,
+        });
+
+        // 4. Extract chunk texts
+        const chunkTexts = chunks.map(chunk => chunk.content);
+
+        // 5. Generate embeddings for ALL chunks
+        const vectors = await embeddings.embedDocuments(chunkTexts);
+
+        console.log(
+            `Generated ${vectors.length} embeddings for document ${documentId}`
+        );
+
+        console.log(
+            `Embedding dimension: ${vectors[0].length}`
+        );
+
+        // 6. Get document to obtain userId
+        const document = await Document.findById(documentId);
+
+        if (!document) {
+            throw new Error("Document not found");
+        }
+
+        // 7. Prepare documents for MongoDB
+        const chunkDocuments = chunks.map((chunk, index) => ({
+            documentId: documentId,
+            userId: document.userId,
+            content: chunk.content,
+            pageNumber: chunk.pageNumber,
+            chunkIndex: chunk.chunkIndex,
+            embedding: vectors[index]
+        }));
+
+        // 8. Store chunks + embeddings
+        await DocumentChunk.insertMany(chunkDocuments);
+
+        // 9. Update original document
         await Document.findByIdAndUpdate(documentId, {
             extractedText: text,
             chunks: chunks,
             status: 'ready'
         });
 
-        console.log(`Document ${documentId} processed successfully`);
-    }
-    catch (error) {
-        console.error(`Error processing document ${documentId}:`, error);
+        console.log(
+            `Document ${documentId} processed successfully`
+        );
+
+    } catch (error) {
+
+        console.error(
+            `Error processing document ${documentId}:`,
+            error
+        );
 
         await Document.findByIdAndUpdate(documentId, {
             status: 'failed'
         });
     }
-}
-
+};
 
 
 // @desc    Get all user documents

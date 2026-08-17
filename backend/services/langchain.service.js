@@ -1,55 +1,108 @@
 import 'dotenv/config';
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import mongoose from "mongoose";
 import { MistralAIEmbeddings, MistralAI } from "@langchain/mistralai";
-import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
-import { Document } from "@langchain/core/documents";
+import DocumentChunk from "../models/documentChunk.js";
 
-export const askQuestionFromText = async (text, question) => {
-  try {
-    const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 100,
-    });
-    const docs = await splitter.createDocuments([text]);
+export const askQuestionFromDocument = async (
+    documentId,
+    userId,
+    question
+) => {
+    try {
+        // 1. Create embedding model
+        const embeddings = new MistralAIEmbeddings({
+            model: "mistral-embed",
+            apiKey: process.env.MISTRAL_API_KEY,
+        });
 
-    // 2️⃣ Embeddings
-    const embeddings = new MistralAIEmbeddings({
-      model: "mistral-embed",
-      apiKey: process.env.MISTRAL_API_KEY,
-    });
+        // 2. Embed ONLY the user's question
+        const queryVector = await embeddings.embedQuery(question);
 
-    // 3️⃣ Vector store
-    const vectorStore = await MemoryVectorStore.fromDocuments(docs, embeddings);
+        // 3. Convert IDs to ObjectId
+        const documentObjectId =
+            new mongoose.Types.ObjectId(documentId);
 
-    // 4️⃣ Retrieve top 3 relevant chunks
-    const relevantDocs = await vectorStore.similaritySearch(question, 3);
-    const context = relevantDocs.map(doc => doc.pageContent).join("\n\n");
+        const userObjectId =
+            new mongoose.Types.ObjectId(userId);
 
-    // 5️⃣ Chat model
-    const chat = new MistralAI({
-      model: "codestral-latest",
-      temperature: 0,
-      apiKey: process.env.MISTRAL_API_KEY,
-    });
+        // 4. Retrieve relevant chunks from MongoDB
+        const results = await DocumentChunk.aggregate([
+            {
+                $vectorSearch: {
+                    index: "vector_index",
+                    path: "embedding",
+                    queryVector,
+                    numCandidates: 50,
+                    limit: 3,
+                    filter: {
+                        documentId: documentObjectId,
+                        userId: userObjectId
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    content: 1,
+                    chunkIndex: 1,
+                    pageNumber: 1,
+                    score: {
+                        $meta: "vectorSearchScore"
+                    }
+                }
+            }
+        ]);
 
-    // 6️⃣ Ask the model
-    const response = await chat.invoke([
-      { role: "system", content: "Answer ONLY using the context. If not found, say 'Answer not found'" },
-      { role: "user", content: `Context:\n${text}\n\nQuestion:\n${question}` }
-    ]);
-    
-const parts = response.split(/Answer:/i);
-const finalAnswer = (parts.length > 1 ? parts[1] : parts[0]).trim();
+        if (results.length === 0) {
+            return {
+                answer: "Answer not found",
+                relevantChunks: []
+            };
+        }
 
-console.log("--- DEBUG START ---");
-console.log("Raw from AI:", response);
-console.log("Cleaned Result:", finalAnswer);
-console.log("--- DEBUG END ---");
+        // 5. Build context from retrieved chunks
+        const context = results
+            .map((chunk, index) =>
+                `Chunk ${index + 1}:\n${chunk.content}`
+            )
+            .join("\n\n");
 
-return finalAnswer || "Answer not found";
+        // 6. Create LLM
+        const chat = new MistralAI({
+            model: "codestral-latest",
+            temperature: 0,
+            apiKey: process.env.MISTRAL_API_KEY,
+        });
 
-  } catch (error) {
-    console.error("Mistral Error:", error);
-    return "Answer not found";
-  }
+        // 7. Ask LLM using ONLY retrieved context
+        const response = await chat.invoke([
+            {
+                role: "system",
+                content:
+                    "You are a document question-answering assistant. " +
+                    "Answer ONLY using the provided context. " +
+                    "If the answer cannot be found in the context, " +
+                    "respond with 'Answer not found'."
+            },
+            {
+                role: "user",
+                content:
+                    `Context:\n${context}\n\n` +
+                    `Question:\n${question}`
+            }
+        ]);
+
+        const parts = response.split(/Answer:/i);
+        const finalAnswer =
+            (parts.length > 1 ? parts[1] : parts[0]).trim();
+
+        return {
+            answer: finalAnswer || "Answer not found",
+            relevantChunks: results
+        };
+
+    } catch (error) {
+        console.error("RAG Error:", error);
+        throw error;
+    }
 };

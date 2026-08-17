@@ -119,11 +119,91 @@ ${text.substring(0, 15000)}
  * @param {number} numQuestions - Number of questions
  * @returns {Promise<Array>}
  */
+// export const generateQuiz = async (text, numQuestions = 5) => {
+//   const prompt = `
+// Generate exactly ${numQuestions} multiple choice questions from the following text.
+
+// Format each question as:
+// Q: [Question]
+// 01: [Option 1]
+// 02: [Option 2]
+// 03: [Option 3]
+// 04: [Option 4]
+// C: [Correct option - exactly as written]
+// E: [Brief explanation]
+// D: [Difficulty: easy, medium, or hard]
+
+// Separate questions with " --- "
+
+// Text:
+// ${text.substring(0, 15000)}
+// `;
+
+//   try {
+//     const response = await ai.models.generateContent({
+//       model: 'gemini-2.5-flash-lite',
+//       contents: prompt
+//     });
+
+//     const generatedText = response.text;
+
+//     const questions = [];
+//     const blocks = generatedText.split(' --- ').filter(b => b.trim());
+
+//     for (const block of blocks) {
+//       const lines = block.trim().split('\n');
+
+//       let question = '';
+//       let options = [];
+//       let correctAnswer = '';
+//       let explanation = '';
+//       let difficulty = 'medium';
+
+//       for (const line of lines) {
+//         const trimmed = line.trim();
+
+//         if (trimmed.startsWith('Q:')) {
+//           question = trimmed.substring(2).trim();
+//         } else if (/^0\d:/.test(trimmed)) {
+//           options.push(trimmed.substring(3).trim());
+//         } else if (trimmed.startsWith('C:')) {
+//           correctAnswer = trimmed.substring(2).trim();
+//         } else if (trimmed.startsWith('E:')) {
+//           explanation = trimmed.substring(2).trim();
+//         } else if (trimmed.startsWith('D:')) {
+//           const diff = trimmed.substring(2).trim().toLowerCase();
+//           if (['easy', 'medium', 'hard'].includes(diff)) {
+//             difficulty = diff;
+//           }
+//         }
+//       }
+
+//       if (question && options.length === 4 && correctAnswer) {
+//         questions.push({
+//           question,
+//           options,
+//           correctAnswer,
+//           explanation,
+//           difficulty
+//         });
+//       }
+//     }
+
+//     return questions.slice(0, numQuestions);
+//   } catch (error) {
+//     console.error('Gemini API error:', error);
+//     throw new Error('Failed to generate quiz');
+//   }
+// };
+
+
 export const generateQuiz = async (text, numQuestions = 5) => {
   const prompt = `
 Generate exactly ${numQuestions} multiple choice questions from the following text.
 
-Format each question as:
+IMPORTANT:
+Follow this format EXACTLY.
+
 Q: [Question]
 01: [Option 1]
 02: [Option 2]
@@ -133,13 +213,16 @@ C: [Correct option - exactly as written]
 E: [Brief explanation]
 D: [Difficulty: easy, medium, or hard]
 
-Separate questions with " --- "
+Separate each question with:
+---
 
 Text:
 ${text.substring(0, 15000)}
 `;
 
   try {
+    console.log("========== STARTING GEMINI QUIZ GENERATION ==========");
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-lite',
       contents: prompt
@@ -147,11 +230,30 @@ ${text.substring(0, 15000)}
 
     const generatedText = response.text;
 
+    console.log("========== GEMINI RAW RESPONSE ==========");
+    console.log(generatedText);
+    console.log("==========================================");
+
+    if (!generatedText) {
+      console.error("Gemini returned empty response");
+      return [];
+    }
+
     const questions = [];
-    const blocks = generatedText.split(' --- ').filter(b => b.trim());
+
+    const blocks = generatedText
+      .split('---')
+      .map(block => block.trim())
+      .filter(block => block.length > 0);
+
+    console.log("Number of blocks:", blocks.length);
 
     for (const block of blocks) {
-      const lines = block.trim().split('\n');
+
+      const lines = block
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
 
       let question = '';
       let options = [];
@@ -160,25 +262,65 @@ ${text.substring(0, 15000)}
       let difficulty = 'medium';
 
       for (const line of lines) {
-        const trimmed = line.trim();
 
-        if (trimmed.startsWith('Q:')) {
-          question = trimmed.substring(2).trim();
-        } else if (/^0\d:/.test(trimmed)) {
-          options.push(trimmed.substring(3).trim());
-        } else if (trimmed.startsWith('C:')) {
-          correctAnswer = trimmed.substring(2).trim();
-        } else if (trimmed.startsWith('E:')) {
-          explanation = trimmed.substring(2).trim();
-        } else if (trimmed.startsWith('D:')) {
-          const diff = trimmed.substring(2).trim().toLowerCase();
+        // Question
+        if (line.startsWith('Q:')) {
+          question = line.substring(2).trim();
+        }
+
+        // Options
+        else if (/^01[:.]/.test(line)) {
+          options.push(line.substring(3).trim());
+        }
+
+        else if (/^02[:.]/.test(line)) {
+          options.push(line.substring(3).trim());
+        }
+
+        else if (/^03[:.]/.test(line)) {
+          options.push(line.substring(3).trim());
+        }
+
+        else if (/^04[:.]/.test(line)) {
+          options.push(line.substring(3).trim());
+        }
+
+        // Correct answer
+        else if (line.startsWith('C:')) {
+          correctAnswer = line.substring(2).trim();
+        }
+
+        // Explanation
+        else if (line.startsWith('E:')) {
+          explanation = line.substring(2).trim();
+        }
+
+        // Difficulty
+        else if (line.startsWith('D:')) {
+          const diff = line
+            .substring(2)
+            .trim()
+            .toLowerCase();
+
           if (['easy', 'medium', 'hard'].includes(diff)) {
             difficulty = diff;
           }
         }
       }
 
-      if (question && options.length === 4 && correctAnswer) {
+      console.log("---------- Parsed Block ----------");
+      console.log("Question:", question);
+      console.log("Options:", options);
+      console.log("Correct:", correctAnswer);
+      console.log("Explanation:", explanation);
+      console.log("Difficulty:", difficulty);
+      console.log("----------------------------------");
+
+      if (
+        question &&
+        options.length === 4 &&
+        correctAnswer
+      ) {
         questions.push({
           question,
           options,
@@ -189,15 +331,22 @@ ${text.substring(0, 15000)}
       }
     }
 
+    console.log("========== FINAL QUESTIONS ==========");
+    console.log(questions);
+    console.log("Total questions:", questions.length);
+    console.log("=====================================");
+
     return questions.slice(0, numQuestions);
+
   } catch (error) {
-    console.error('Gemini API error:', error);
+
+    console.error("========== GEMINI QUIZ ERROR ==========");
+    console.error(error);
+    console.error("=======================================");
+
     throw new Error('Failed to generate quiz');
   }
 };
-
-
-
 
 
 /**
